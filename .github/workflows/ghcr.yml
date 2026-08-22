@@ -2,7 +2,7 @@ name: Build and Push to GHCR
 
 on:
   push:
-    branches: [main, canary]
+    branches: [ci]
   workflow_dispatch:
 
 env:
@@ -37,10 +37,10 @@ jobs:
           SHORT_SHA="${GITHUB_SHA::7}"
           TAGS="${IMAGE_NAME}:sha-${SHORT_SHA}"
 
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/ci" ]; then
+            TAGS="${TAGS},${IMAGE_NAME}:ci,${IMAGE_NAME}:latest,${IMAGE_NAME}:${VERSION}"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             TAGS="${TAGS},${IMAGE_NAME}:latest,${IMAGE_NAME}:${VERSION}"
-          elif [ "${{ github.ref }}" = "refs/heads/canary" ]; then
-            TAGS="${TAGS},${IMAGE_NAME}:canary"
           else
             TAGS="${TAGS},${IMAGE_NAME}:${GITHUB_REF_NAME}"
           fi
@@ -74,10 +74,8 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Deploy on your server:" >> "$GITHUB_STEP_SUMMARY"
           echo '```bash' >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/ci" ] || [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "docker service update --image ${IMAGE_NAME}:latest --force dokploy" >> "$GITHUB_STEP_SUMMARY"
-          elif [ "${{ github.ref }}" = "refs/heads/canary" ]; then
-            echo "docker service update --image ${IMAGE_NAME}:canary --force dokploy" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "docker service update --image ${IMAGE_NAME}:sha-${GITHUB_SHA::7} --force dokploy" >> "$GITHUB_STEP_SUMMARY"
           fi
